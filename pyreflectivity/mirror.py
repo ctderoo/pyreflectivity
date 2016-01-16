@@ -18,6 +18,7 @@ import numpy as np
 class _Mirror(object):
 
     URLBASE = 'http://henke.lbl.gov'
+    MAX_STEP = 500
 
     def _process(self, script, data):
         response = self._post(script, data)
@@ -45,8 +46,14 @@ class _Mirror(object):
             return fp.read()
 
     def _parse_data(self, s):
-        return np.array([list(map(float, line.split())) \
-                         for line in s.splitlines()[2:]])
+        return [list(map(float, line.split())) for line in s.splitlines()[2:]]
+
+    def _iter_range(self, x0, x1, step):
+        dx = (x1 - x0) / step
+        xs = np.arange(x0, x1, dx)
+        x0s = xs[::self.MAX_STEP]
+        x1s = x0s + dx * min(step, self.MAX_STEP)
+        yield from zip(x0s, x1s)
 
     def calculate_energy_scan(self, e0_eV, e1_eV, step, angle_deg):
         """
@@ -159,31 +166,69 @@ class MultiLayerMirror(_Mirror):
         return data
 
     def calculate_energy_scan(self, e0_eV, e1_eV, step, angle_deg):
-        data = self._create_post_data()
-        data['Scan'] = 'Energy'
-        data['Min'] = e0_eV
-        data['Max'] = e1_eV
-        data['Npts'] = step
-        data['Fixed'] = angle_deg
-        return self._process('multi.pl', data)
+        if e0_eV < 30:
+            raise ValueError('Minimum energy is 30 eV')
+        if e1_eV > 30000:
+            raise ValueError('Maximum energy is 30000 eV')
+
+        values = []
+        for e0, e1 in self._iter_range(e0_eV, e1_eV, step):
+            data = self._create_post_data()
+            data['Scan'] = 'Energy'
+            data['Min'] = e0
+            data['Max'] = e1
+            data['Npts'] = min(step, self.MAX_STEP)
+            data['Fixed'] = angle_deg
+            values.extend(self._process('multi.pl', data)[:-1])
+
+        return np.array(values)
 
     def calculate_wavelength_scan(self, lambda0_nm, lambda1_nm, step, angle_deg):
-        data = self._create_post_data()
-        data['Scan'] = 'Wave'
-        data['Min'] = lambda0_nm
-        data['Max'] = lambda1_nm
-        data['Npts'] = step
-        data['Fixed'] = angle_deg
-        return self._process('multi.pl', data)
+        if lambda0_nm < 0.041:
+            raise ValueError('Minimum wavelength is 0.041 nm')
+        if lambda1_nm > 41.0:
+            raise ValueError('Maximum wavelength is 41 nm')
+
+        values = []
+        for lambda0, lambda1 in self._iter_range(lambda0_nm, lambda1_nm, step):
+            data = self._create_post_data()
+            data['Scan'] = 'Wave'
+            data['Min'] = lambda0
+            data['Max'] = lambda1
+            data['Npts'] = min(step, self.MAX_STEP)
+            data['Fixed'] = angle_deg
+            values.extend(self._process('multi.pl', data)[:-1])
+
+        return np.array(values)
 
     def calculate_angle_scan(self, theta0_deg, theta1_deg, step, energy_eV):
-        data = self._create_post_data()
-        data['Scan'] = 'Angle'
-        data['Min'] = theta0_deg
-        data['Max'] = theta1_deg
-        data['Npts'] = step
-        data['Fixed'] = energy_eV
-        return self._process('multi.pl', data)
+        if theta0_deg < 0:
+            raise ValueError('Minimum angle is 0 deg')
+        if theta1_deg > 90:
+            raise ValueError('Maximum angle is 90 deg')
+
+        values = []
+        for theta0, theta1 in self._iter_range(theta0_deg, theta1_deg, step):
+            data = self._create_post_data()
+            data['Scan'] = 'Angle'
+            data['Min'] = theta0
+            data['Max'] = theta1
+            data['Npts'] = min(step, self.MAX_STEP)
+            data['Fixed'] = energy_eV
+            values.extend(self._process('multi.pl', data)[:-1])
+
+        return np.array(values)
+
+    def calculate_energy_angle_scan(self, e0_eV, e1_eV, e_step,
+                                    theta0_deg, theta1_deg, theta_step):
+        values = np.zeros((e_step, theta_step))
+        thetas = np.linspace(theta0_deg, theta1_deg, theta_step)
+
+        for i, theta_deg in enumerate(thetas):
+            dvalues = self.calculate_energy_scan(e0_eV, e1_eV, e_step, theta_deg)
+            values[:, i] = dvalues[:, 1]
+
+        return values
 
     @property
     def top_layer(self):
