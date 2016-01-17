@@ -53,7 +53,9 @@ class _Mirror(object):
         xs = np.arange(x0, x1, dx)
         x0s = xs[::self.MAX_STEP]
         x1s = x0s + dx * min(step, self.MAX_STEP)
-        yield from zip(x0s, x1s)
+        x1s[-1] = x1
+        steps = np.array((x1s - x0s) / dx, dtype=int)
+        yield from zip(x0s, x1s, steps)
 
     def calculate_energy_scan(self, e0_eV, e1_eV, step, angle_deg):
         """
@@ -172,12 +174,12 @@ class MultiLayerMirror(_Mirror):
             raise ValueError('Maximum energy is 30000 eV')
 
         values = []
-        for e0, e1 in self._iter_range(e0_eV, e1_eV, step):
+        for e0, e1, step in self._iter_range(e0_eV, e1_eV, step):
             data = self._create_post_data()
             data['Scan'] = 'Energy'
             data['Min'] = e0
             data['Max'] = e1
-            data['Npts'] = min(step, self.MAX_STEP)
+            data['Npts'] = step
             data['Fixed'] = angle_deg
             values.extend(self._process('multi.pl', data)[:-1])
 
@@ -190,12 +192,13 @@ class MultiLayerMirror(_Mirror):
             raise ValueError('Maximum wavelength is 41 nm')
 
         values = []
-        for lambda0, lambda1 in self._iter_range(lambda0_nm, lambda1_nm, step):
+        for lambda0, lambda1, step in \
+                self._iter_range(lambda0_nm, lambda1_nm, step):
             data = self._create_post_data()
             data['Scan'] = 'Wave'
             data['Min'] = lambda0
             data['Max'] = lambda1
-            data['Npts'] = min(step, self.MAX_STEP)
+            data['Npts'] = step
             data['Fixed'] = angle_deg
             values.extend(self._process('multi.pl', data)[:-1])
 
@@ -208,12 +211,13 @@ class MultiLayerMirror(_Mirror):
             raise ValueError('Maximum angle is 90 deg')
 
         values = []
-        for theta0, theta1 in self._iter_range(theta0_deg, theta1_deg, step):
+        for theta0, theta1, step in \
+                self._iter_range(theta0_deg, theta1_deg, step):
             data = self._create_post_data()
             data['Scan'] = 'Angle'
             data['Min'] = theta0
             data['Max'] = theta1
-            data['Npts'] = min(step, self.MAX_STEP)
+            data['Npts'] = step
             data['Fixed'] = energy_eV
             values.extend(self._process('multi.pl', data)[:-1])
 
