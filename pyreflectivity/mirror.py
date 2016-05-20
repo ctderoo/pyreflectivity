@@ -223,17 +223,6 @@ class MultiLayerMirror(_Mirror):
 
         return np.array(values)
 
-    def calculate_energy_angle_scan(self, e0_eV, e1_eV, e_step,
-                                    theta0_deg, theta1_deg, theta_step):
-        values = np.zeros((e_step, theta_step))
-        thetas = np.linspace(theta0_deg, theta1_deg, theta_step)
-
-        for i, theta_deg in enumerate(thetas):
-            dvalues = self.calculate_energy_scan(e0_eV, e1_eV, e_step, theta_deg)
-            values[:, i] = dvalues[:, 1]
-
-        return values
-
     @property
     def top_layer(self):
         return self._top_layer
@@ -245,6 +234,31 @@ class MultiLayerMirror(_Mirror):
     @property
     def substrate(self):
         return self._substrate
+
+class EnergyAngleScan(object):
+
+    def __init__(self, mirror):
+        self._mirror = mirror
+        self._progress = 0.0
+
+    def scan(self, e0_eV, e1_eV, e_step, theta0_deg, theta1_deg, theta_step):
+        values = np.zeros((e_step, theta_step))
+        thetas = np.linspace(theta0_deg, theta1_deg, theta_step)
+
+        self._progress = 0
+
+        for i, theta_deg in enumerate(thetas):
+            self._progress = i / len(thetas)
+            dvalues = self.mirror.calculate_energy_scan(e0_eV, e1_eV, e_step, theta_deg)
+            values[:, i] = dvalues[:, 1]
+
+        self._progress = 1
+
+        return values
+
+    @property
+    def progress(self):
+        return self._progress
 
 if __name__ == '__main__':
     # LiF
