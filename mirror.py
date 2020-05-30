@@ -17,7 +17,7 @@ import numpy as np
 
 class _Mirror(object):
 
-    URLBASE = 'http://henke.lbl.gov'
+    URLBASE = 'https://henke.lbl.gov'
     MAX_STEP = 500
 
     def _process(self, script, data):
@@ -97,9 +97,9 @@ class ThickMirror(_Mirror):
 
     def __init__(self):
         self.chemical_formula = 'SiO2'
-        self.density_g_cm3 = -1
-        self.roughness_nm = 0
-        self.polarization = 1
+        self.density_g_cm3 = '-1'
+        self.roughness_nm = '0'
+        self.polarization = '1'
 
     def _create_post_data(self):
         data = {}
@@ -146,7 +146,7 @@ class SingleLayerMirror(_Mirror):
         self.layer_thickness_nm = 30
         self.layer_roughness_nm = 0
         self.sub_chemical_formula = 'SiO2'          # Substrate Material
-        self.sub_density_gm_cm3 = -1                # Substrate Density
+        self.sub_density_g_cm3 = -1                # Substrate Density
         self.sub_roughness_nm = 0                   # Substrate Roughness (nm)
         self.polarization = 1                       # Polarization of Incoming Light
 
@@ -157,7 +157,7 @@ class SingleLayerMirror(_Mirror):
         data['Thick'] = self.layer_thickness_nm
         data['Sigma1'] = self.layer_roughness_nm
         data['Substrate'] = self.sub_chemical_formula
-        data['Sdensity'] = self.sub_density_gm_cm3
+        data['Sdensity'] = self.sub_density_g_cm3
         data['Sigma2'] = self.sub_roughness_nm
         data['Pol'] = self.polarization
         data['Plot'] = 'Linear'
@@ -222,15 +222,15 @@ class BiLayerMirror(_Mirror):
 
     def __init__(self):
         self.top_chemical_formula = 'C'             # Top Layer Material
-        self.top_density_gm_cm = -1                 # Top Layer Density
+        self.top_density_g_cm3 = -1                 # Top Layer Density
         self.top_thickness_nm  = 30                 # Top Layer Thickness (nm)
         self.top_roughness_nm= 0                    # Top Layer Roughness (nm)
         self.bot_chemical_formula = 'Cr'            # Bottom Layer Material
-        self.bot_density_gm_cm3 = -1                # Bottom Layer Density
+        self.bot_density_g_cm3 = -1                # Bottom Layer Density
         self.bot_thickness_nm = 10                  # Bottom Layer Thickness (nm)
         self.bot_roughness_nm = 0                   # Bottom Layer Roughness (nm)
         self.sub_chemical_formula = 'SiO2'          # Substrate Material
-        self.sub_density_gm_cm3 = -1                # Substrate Density
+        self.sub_density_g_cm3 = -1                # Substrate Density
         self.sub_roughness_nm = 0                   # Substrate Roughness (nm)
         self.polarization = 1                       # Polarization of Incoming Light
 
@@ -241,11 +241,11 @@ class BiLayerMirror(_Mirror):
         data['Thickt'] = self.top_thickness_nm
         data['Sigmat'] = self.top_roughness_nm
         data['Blayer'] = self.bot_chemical_formula
-        data['Bdensity'] = self.bot_density_gm_cm3
+        data['Bdensity'] = self.bot_density_g_cm3
         data['Thickb'] = self.bot_thickness_nm
         data['Sigmab'] = self.bot_roughness_nm
         data['Substrate'] = self.sub_chemical_formula
-        data['Sdensity'] = self.sub_density_gm_cm3
+        data['Sdensity'] = self.sub_density_g_cm3
         data['Sigmas'] = self.sub_roughness_nm
         data['Pol'] = self.polarization
         data['Plot'] = 'Linear'
